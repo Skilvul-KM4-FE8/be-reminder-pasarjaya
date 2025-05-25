@@ -18,16 +18,37 @@ const client = new Client({
   },
 });
 
-// Tampilkan QR code di terminal
 let latestQr = null;
+let isConnected = false; // ✅ Status koneksi WA
 
 client.on("qr", (qr) => {
   latestQr = qr;
+  isConnected = false; // QR muncul = belum konek
   console.log("Scan QR Code ini dengan WhatsApp:");
   qrcode.generate(qr, { small: true });
 });
 
-// Endpoint untuk mendapatkan QR code di frontend
+client.on("ready", async () => {
+  console.log("✅ WhatsApp siap digunakan!");
+  isConnected = true; // ✅ Sudah terhubung
+  // try {
+  //   await new Promise((r) => setTimeout(r, 5000));
+  //   const contacts = await client.getContacts();
+  //   console.log("📇 Daftar kontak:");
+  //   contacts.forEach((contact) => {
+  //     console.log(`- ${contact.name || contact.pushname || contact.number} | ${contact.id._serialized}`);
+  //   });
+  // } catch (err) {
+  //   console.error("❌ Gagal mengambil kontak:", err);
+  // }
+});
+
+client.on("disconnected", () => {
+  console.log("🔌 WhatsApp terputus");
+  isConnected = false; // ❌ Putus koneksi
+});
+
+// Endpoint QR code
 app.get("/qr", (req, res) => {
   if (latestQr) {
     res.json({ qr: latestQr });
@@ -36,32 +57,33 @@ app.get("/qr", (req, res) => {
   }
 });
 
-// Event saat client siap
-client.on("ready", async () => {
-  console.log("✅ WhatsApp siap digunakan!");
-  try {
-    // Tunggu 3 detik untuk stabilisasi session dan page
-    await new Promise((r) => setTimeout(r, 5000));
+// ✅ Endpoint status koneksi
+app.get("/status", (req, res) => {
+  res.json({ connected: isConnected });
+});
 
-    const contacts = await client.getContacts();
-    console.log("📇 Daftar kontak:");
-    contacts.forEach((contact) => {
-      console.log(`- ${contact.name || contact.pushname || contact.number} | ${contact.id._serialized}`);
-    });
-  } catch (err) {
-    console.error("❌ Gagal mengambil kontak:", err);
+// Endpoint untuk logout WhatsApp
+app.post("/logout", async (req, res) => {
+  try {
+    await client.logout();
+    isConnected = false;
+    console.log("Logged out");
+
+    // Re-initialize client to generate a new QR code
+    client.destroy();
+
+    setTimeout(() => {
+      client.initialize(); // This will trigger QR generation
+    }, 1000); // slight delay to avoid race condition
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Logout failed", error);
+    res.json({ success: false });
   }
 });
 
-// Event saat ada pesan masuk (opsional)
-client.on("message", async (msg) => {
-  console.log(`📥 Message from ${msg.from}: ${msg.body}`);
-});
-
-// Start WhatsApp client
-client.initialize();
-
-// Endpoint API untuk kirim pesan
+// Endpoint kirim pesan
 app.post("/send", async (req, res) => {
   const { number, message } = req.body;
 
@@ -70,17 +92,20 @@ app.post("/send", async (req, res) => {
   }
 
   try {
-    // Pastikan nomor hanya angka, hapus karakter lain
     const chatId = number.replace(/\D/g, "") + "@c.us";
     await client.sendMessage(chatId, message);
     res.json({ success: true, to: number });
+    console.log(`✅ Pesan terkirim ke ${number}: ${message}`);
   } catch (err) {
     console.error("❌ Gagal kirim pesan:", err);
     res.status(500).json({ success: false, error: err.toString() });
   }
 });
 
-// Mulai server
+// Jalankan server
 app.listen(port, () => {
   console.log(`🚀 Server berjalan di http://localhost:${port}`);
 });
+
+// Inisialisasi client
+client.initialize();
