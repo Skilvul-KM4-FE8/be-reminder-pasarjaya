@@ -1,4 +1,3 @@
-
 # 📬 WhatsApp Gateway API
 
 Sebuah gateway WhatsApp berbasis `Node.js` dan `whatsapp-web.js` yang memungkinkan pengiriman pesan, file, gambar, dan manajemen sesi secara fleksibel melalui REST API.
@@ -20,7 +19,6 @@ Sebuah gateway WhatsApp berbasis `Node.js` dan `whatsapp-web.js` yang memungkink
 ## 📁 Struktur Folder
 
 ```bash
-
 .
 ├── app.js                     # Entry point
 ├── config/
@@ -177,7 +175,7 @@ Body:
 ## 🧑‍💻 Author
 
 **Muhamad Alfito Santosa**
-GitHub: [@alfitosans\_](https://github.com/alfitosans_)
+GitHub: [@alfitosansantosa](https://github.com/alfitosantosa)
 
 ---
 
