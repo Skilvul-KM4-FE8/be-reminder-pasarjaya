@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
+// const qrcode = require("qrcode-terminal");
+// const { executablePath } = require("puppeteer");
 
 const app = express();
 const port = 4567;
@@ -13,20 +14,22 @@ app.use(express.json());
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     headless: true,
-    args: ["--no-sandbox"],
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
 });
 
 let latestQr = null;
 let isConnected = false; // ✅ Status koneksi WA
 
-client.on("qr", (qr) => {
-  latestQr = qr;
-  isConnected = false; // QR muncul = belum konek
-  console.log("Scan QR Code ini dengan WhatsApp:");
-  qrcode.generate(qr, { small: true });
-});
+// generate QR code saat client belum terhubung
+// client.on("qr", (qr) => {
+//   latestQr = qr;
+//   isConnected = false; // QR muncul = belum konek
+//   console.log("Scan QR Code ini dengan WhatsApp:");
+//   qrcode.generate(qr, { small: true });
+// });
 
 client.on("ready", async () => {
   console.log("✅ WhatsApp siap digunakan!");
